@@ -9,7 +9,13 @@ namespace catalogue_core {
 
     namespace statreader {
 
-        std::vector<std::string> StringParser(std::string_view str, std::string delimiter) {
+        using namespace std::string_literals;
+        using namespace transportcatalogue;
+
+        const auto BUS_INFO_NAME = "Bus"s;
+        const auto STOP_INFO_NAME = "Stop"s;
+
+        std::vector<std::string> StringParser(std::string_view str, const std::string delimiter) {
             std::vector<std::string> output;
 
             while (!str.empty()) {
@@ -63,14 +69,14 @@ namespace catalogue_core {
             return is;
         }
 
-        void StatReader::PrintInformationAboutBus(RouteStatistic& output, std::string& name, std::ostream& os) const {
+        void StatReader::PrintInformationAboutBus(const RouteStatistic& output, const std::string& name, std::ostream& os) const {
 
             os << "Bus "s << name << ": "s << output.num_of_stops_ << " stops on route, "s
                 << output.num_of_unique_stops_ << " unique stops, "s << std::setprecision(6) << static_cast<double>(output.route_length_) << " route length, "s
                 << std::setprecision(6) << output.curvature << " curvature"s << std::endl;
         }
 
-        void StatReader::PrintInformationAboutStop(std::set<std::string_view, std::less<>>& output, std::string& name, std::ostream& os) const {
+        void StatReader::PrintInformationAboutStop(const std::set<std::string_view, std::less<>>& output, const std::string& name, std::ostream& os) const {
 
             os << "Stop "s << name << ": buses"s;
 
@@ -89,18 +95,20 @@ namespace catalogue_core {
             getline(is, str);
             number = std::stoi(str);
 
-            QueryToBase q;
+            std::vector<QueryToBase> querys_to_base;
+            querys_to_base.reserve(number);
 
             for (size_t i = 0; i < number; ++i) {
+                QueryToBase q;
                 is >> q;
-                querys_to_base_.push_back(q);
+                querys_to_base.push_back(q);
             }
 
-            while (!querys_to_base_.empty()) {
+            for (auto query : querys_to_base) {
 
-                auto name = querys_to_base_.front().name;
+                auto name = query.name;
 
-                switch (querys_to_base_.front().type) {
+                switch (query.type) {
 
                 case QueryToBaseType::BUS_INFO:
                     if (auto result = catalogue_->GetInformationAboutBusRoute(name); result.has_value()) {
@@ -113,21 +121,19 @@ namespace catalogue_core {
 
                 case QueryToBaseType::STOP_INFO:
                     if (auto result = catalogue_->GetInformationAboutStop(name); result.has_value()) {
-                        if (result.value().size() == 0) {
+                        if (result.value().empty()) {
                             os << "Stop "s << name << ": "s << "not found"s << std::endl;
                         }
                         else {
                             PrintInformationAboutStop(result.value(), name, os);
                         }
-
                     }
                     else {
                         os << "Stop "s << name << ": "s << "no buses"s << std::endl;
                     }
                     break;
                 }
-                querys_to_base_.pop_front();
             }
         }
-    }
+    }    
 }

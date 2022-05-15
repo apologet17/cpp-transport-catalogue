@@ -8,17 +8,9 @@
 #include "transport_catalogue.h"
 
 
-
 namespace catalogue_core {
 
-	using namespace transportcatalogue;
-
 	namespace inputreader {
-
-		using namespace std::string_literals;
-
-		const auto ADD_BUS_NAME = "Bus"s;
-		const auto ADD_STOP_NAME = "Stop"s;
 
 		enum QueryType {
 			ADD_BUS,
@@ -45,8 +37,8 @@ namespace catalogue_core {
 		class InputReader {
 
 		public:
-			InputReader(transportcatalogue::TransportCatalogue* catalogue)
-				: catalogue_(catalogue) {
+			explicit InputReader(transportcatalogue::TransportCatalogue& catalogue)
+				: catalogue_(&catalogue) {
 			}
 			void AdditionToCatalogue(std::istream& is);
 

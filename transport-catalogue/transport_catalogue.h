@@ -2,6 +2,7 @@
 
 #include<list>
 #include<string>
+#include<vector>
 #include<set>
 #include<unordered_map>
 #include <optional> 
@@ -27,12 +28,12 @@ namespace catalogue_core {
 		struct BusRoute {
 			bool circular;
 			std::string name;
-			std::vector<std::list<BusStop>::iterator> stops;
+			std::vector<BusStop*> stops;
 		};
 
 		class StopLengthsHasher {
 		public:
-			size_t operator()(const std::pair<std::list<BusStop>::iterator, std::list<BusStop>::iterator>& stop_len) const {
+			size_t operator()(const std::pair<BusStop*, BusStop*>& stop_len) const {
 
 				return std::hash<void*>{}(&(*stop_len.first)) + std::hash<void*>{}(&(*stop_len.second)) * 17;
 			}
@@ -43,27 +44,27 @@ namespace catalogue_core {
 		public:
 			TransportCatalogue() = default;
 
-			void AddBusRoute(BusRoute& bus_route);
-			void AddBusStop(BusStop& bus_stop);
-			void AddLength(std::string& bus_stop_name, std::vector<std::pair<std::string, int>>& lengths);
+			void AddBusRoute(const BusRoute& bus_route);
+			void AddBusStop(const BusStop& bus_stop);
+			void AddLength(const std::string& bus_stop_name, const std::vector<std::pair<std::string, int>>& lengths);
 
-			std::list<BusRoute>::iterator FindBusRoute(std::string& busroute_name) const;
-			std::list<BusStop>::iterator FindBusStop(std::string& busstop_name) const;
+			BusRoute* FindBusRoute(const std::string& busroute_name) const;
+			BusStop* FindBusStop(const std::string& busstop_name) const;
 
-			std::optional<RouteStatistic> GetInformationAboutBusRoute(std::string& busroute_name) const;
-			std::optional<std::set<std::string_view, std::less<>>> GetInformationAboutStop(std::string& busroute_name) const;
-			std::optional<int> GetLength(std::string& stop_name_first, std::string& stop_name_second) const;
+			std::optional<RouteStatistic> GetInformationAboutBusRoute(const std::string& busroute_name) const;
+			std::optional<std::set<std::string_view, std::less<>>> GetInformationAboutStop(const std::string& busroute_name) const;
+			std::optional<int> GetLength(const std::string& stop_name_first, const std::string& stop_name_second) const;
 
 		private:
 
 			std::list<BusStop> bus_stops_;
-			std::unordered_map<std::string_view, std::list<BusStop>::iterator> stopname_to_stops_;
+			std::unordered_map<std::string_view, BusStop*> stopname_to_stops_;
 
 			std::list<BusRoute> bus_routes_;
-			std::unordered_map<std::string_view, std::list<BusRoute>::iterator> busname_to_routes_;
+			std::unordered_map<std::string_view, BusRoute*> busname_to_routes_;
 
 			std::unordered_map<std::string_view, std::set<std::string_view, std::less<>>> buses_for_stop_;
-			std::unordered_map<std::pair<std::list<BusStop>::iterator, std::list<BusStop>::iterator>, int, StopLengthsHasher> stop_lengths_;
+			std::unordered_map<std::pair<BusStop*, BusStop*>, int, StopLengthsHasher> stop_lengths_;
 		};
 	}
 }

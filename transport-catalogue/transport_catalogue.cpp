@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <unordered_set>
+#include <stdexcept>
 #include "transport_catalogue.h"
 
 namespace catalogue_core {
@@ -8,37 +9,58 @@ namespace catalogue_core {
 
 		static std::set<std::string_view, std::less<>> zeroset;
 
-		std::list<BusRoute>::iterator TransportCatalogue::FindBusRoute(std::string& busroute_name) const {
-			return busname_to_routes_.at(busroute_name);
+		BusRoute* TransportCatalogue::FindBusRoute(const std::string& busroute_name) const {
+			if (busname_to_routes_.count(busroute_name)) {
+				return busname_to_routes_.at(busroute_name);
+			}
+			else {
+				return nullptr;
+			}
 		}
 
-		std::list<BusStop>::iterator TransportCatalogue::FindBusStop(std::string& busstop_name) const {
-			return stopname_to_stops_.at(busstop_name);
+		BusStop* TransportCatalogue::FindBusStop(const std::string& busstop_name) const {
+			if (stopname_to_stops_.count(busstop_name)) {
+				return stopname_to_stops_.at(busstop_name);
+			}
+			else {
+				return nullptr;
+			}
 		}
 
-		void TransportCatalogue::AddBusStop(BusStop& bus_stop) {
+		void TransportCatalogue::AddBusStop(const BusStop& bus_stop) {
 			auto it = bus_stops_.insert(bus_stops_.begin(), bus_stop);
-			stopname_to_stops_[it->name] = it;
+			stopname_to_stops_[it->name] = &(*it);
 		}
 
-		void TransportCatalogue::AddBusRoute(BusRoute& bus_route) {
-			auto it = bus_routes_.insert(bus_routes_.begin(), bus_route);
-			busname_to_routes_[it->name] = it;
-			for (auto i : bus_route.stops) {
-				buses_for_stop_[i->name].insert(it->name);
+		void TransportCatalogue::AddBusRoute(const BusRoute& bus_route) {
+			auto ptr = bus_routes_.insert(bus_routes_.begin(), bus_route);
+			busname_to_routes_[ptr->name] = &(*ptr);
+			for (auto& stop : bus_route.stops) {
+				buses_for_stop_[stop->name].insert(ptr->name);
 			}
 		}
 
-		void TransportCatalogue::AddLength(std::string& bus_stop_name, std::vector<std::pair<std::string, int>>& lengths) {
-			auto first_it = FindBusStop(bus_stop_name);
+		void TransportCatalogue::AddLength(const std::string& bus_stop_name, const std::vector<std::pair<std::string, int>>& lengths) {
 
-			for (auto& len : lengths) {
-				auto second_it = FindBusStop(len.first);
-				stop_lengths_[std::make_pair(first_it, second_it)] = len.second;
+			using namespace std::string_literals;
+
+			if (auto first_ptr = FindBusStop(bus_stop_name); first_ptr != nullptr) {
+
+				for (auto& len : lengths) {
+					if (auto second_ptr = FindBusStop(len.first); second_ptr != nullptr) {				
+						stop_lengths_[std::make_pair(first_ptr, second_ptr)] = len.second;
+					}
+					else {
+						throw std::invalid_argument("AddLength: Unknown second bus stop name"s);
+					}					
+				}
+			}
+			else {
+				throw std::invalid_argument("AddLength: Unknown first bus stop name"s);
 			}
 		}
 
-		std::optional<RouteStatistic> TransportCatalogue::GetInformationAboutBusRoute(std::string& busroute_name) const {
+		std::optional<RouteStatistic> TransportCatalogue::GetInformationAboutBusRoute(const std::string& busroute_name) const {
 
 			RouteStatistic output;
 
@@ -46,14 +68,14 @@ namespace catalogue_core {
 				return std::nullopt;
 			}
 
-			auto it = busname_to_routes_.at(busroute_name);
+			auto route_ptr = busname_to_routes_.at(busroute_name);
 
 			output.route_length_ = 0;
 			output.curvature = 0.0;
 			std::unordered_set<std::string_view> route;
 
-			if (!it->circular) {
-				for (auto first = it->stops.begin(); first != it->stops.end() - 1; ++first) {
+			if (!route_ptr->circular) {
+				for (auto first = route_ptr->stops.begin(); first != route_ptr->stops.end() - 1; ++first) {
 					route.insert((*first)->name);
 
 					auto len_forward = GetLength((*first)->name, (*(first + 1))->name);
@@ -73,10 +95,10 @@ namespace catalogue_core {
 						stopname_to_stops_.at((*(first + 1))->name)->coordinates);
 				}
 				output.curvature *= 2.0;
-				output.num_of_stops_ = 2 * it->stops.size() - 1;
+				output.num_of_stops_ = 2 * route_ptr->stops.size() - 1;
 			}
 			else {
-				for (auto first = it->stops.begin(); first != it->stops.end() - 1; ++first) {
+				for (auto first = route_ptr->stops.begin(); first != route_ptr->stops.end() - 1; ++first) {
 					route.insert((*first)->name);
 
 					if (auto len = GetLength((*first)->name, (*(first + 1))->name); len.has_value()) {
@@ -89,17 +111,17 @@ namespace catalogue_core {
 					output.curvature += ComputeDistance(stopname_to_stops_.at((*first)->name)->coordinates,
 						stopname_to_stops_.at((*(first + 1))->name)->coordinates);
 				}
-				output.num_of_stops_ = it->stops.size();
+				output.num_of_stops_ = route_ptr->stops.size();
 			}
 
 			output.curvature = static_cast<double>(output.route_length_) / output.curvature;
-			route.insert((*(it->stops.end() - 1))->name);
+			route.insert((*(route_ptr->stops.end() - 1))->name);
 			output.num_of_unique_stops_ = route.size();
 
 			return output;
 		}
 
-		std::optional<std::set<std::string_view, std::less<>>> TransportCatalogue::GetInformationAboutStop(std::string& stop_name) const {
+		std::optional<std::set<std::string_view, std::less<>>> TransportCatalogue::GetInformationAboutStop(const std::string& stop_name) const {
 			if (stopname_to_stops_.count(stop_name) == 0) {
 				return zeroset;
 			}
@@ -111,7 +133,7 @@ namespace catalogue_core {
 			}
 		}
 
-		std::optional<int> TransportCatalogue::GetLength(std::string& stop_name_first, std::string& stop_name_second) const {
+		std::optional<int> TransportCatalogue::GetLength(const std::string& stop_name_first, const std::string& stop_name_second) const {
 			auto pair_stops = std::make_pair(stopname_to_stops_.at(stop_name_first), stopname_to_stops_.at(stop_name_second));
 
 			if (stop_lengths_.count(pair_stops)) {
@@ -120,7 +142,6 @@ namespace catalogue_core {
 			else {
 				return std::nullopt;
 			}
-
 		}
 	}
 }

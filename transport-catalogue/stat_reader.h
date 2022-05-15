@@ -7,14 +7,7 @@
 
 namespace catalogue_core {
 
-	using namespace transportcatalogue;
-
 	namespace statreader {
-
-		using namespace std::string_literals;
-
-		const auto BUS_INFO_NAME = "Bus"s;
-		const auto STOP_INFO_NAME = "Stop"s;
 
 		enum QueryToBaseType {
 			BUS_INFO,
@@ -28,18 +21,17 @@ namespace catalogue_core {
 
 		class StatReader {
 		public:
-			StatReader(TransportCatalogue* catalogue)
-				: catalogue_(catalogue) {
+			explicit StatReader(transportcatalogue::TransportCatalogue& catalogue)
+				: catalogue_(&catalogue) {
 
 			}
 			void QueryProcessing(std::istream& is, std::ostream& os);
 
 		private:
-			void PrintInformationAboutBus(RouteStatistic& output, std::string& name, std::ostream& os) const;
-			void PrintInformationAboutStop(std::set<std::string_view, std::less<>>& output, std::string& name, std::ostream& os) const;
+			void PrintInformationAboutBus(const transportcatalogue::RouteStatistic& output, const std::string& name, std::ostream& os) const;
+			void PrintInformationAboutStop(const std::set<std::string_view, std::less<>>& output, const std::string& name, std::ostream& os) const;
 
-			std::deque<QueryToBase> querys_to_base_;
-			TransportCatalogue* catalogue_;
+			transportcatalogue::TransportCatalogue* catalogue_;
 		};
 
 		std::istream& operator>>(std::istream& is, QueryToBase& query);
