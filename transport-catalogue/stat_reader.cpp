@@ -12,8 +12,8 @@ namespace catalogue_core {
         using namespace std::string_literals;
         using namespace transportcatalogue;
 
-        const auto BUS_INFO_NAME = "Bus"s;
-        const auto STOP_INFO_NAME = "Stop"s;
+        static const auto BUS_INFO_NAME = "Bus"s;
+        static const auto STOP_INFO_NAME = "Stop"s;
 
         std::vector<std::string> StringParser(std::string_view str, const std::string delimiter) {
             std::vector<std::string> output;
@@ -104,7 +104,7 @@ namespace catalogue_core {
                 querys_to_base.push_back(q);
             }
 
-            for (auto query : querys_to_base) {
+            for (const auto& query : querys_to_base) {
 
                 auto name = query.name;
 

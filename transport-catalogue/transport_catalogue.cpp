@@ -7,7 +7,7 @@ namespace catalogue_core {
 
 	namespace transportcatalogue {
 
-		static std::set<std::string_view, std::less<>> zeroset;
+		static const std::set<std::string_view, std::less<>> zeroset;
 
 		BusRoute* TransportCatalogue::FindBusRoute(const std::string& busroute_name) const {
 			if (busname_to_routes_.count(busroute_name)) {

@@ -11,8 +11,8 @@ namespace catalogue_core{
 
     namespace inputreader {
 
-        inline const auto ADD_BUS_NAME = "Bus"s;
-        inline const auto ADD_STOP_NAME = "Stop"s;
+        static const auto ADD_BUS_NAME = "Bus"s;
+        static const auto ADD_STOP_NAME = "Stop"s;
 
         std::vector<std::string> StringParser(std::string_view str, std::string delimiter, size_t num_str_for_search) {
             std::vector<std::string> output;
@@ -61,7 +61,7 @@ namespace catalogue_core{
 
             auto lengths = inputreader::StringParser(it->lengths, ","s, UINT32_MAX);
 
-            for (auto& len : lengths) {             
+            for (const auto& len : lengths) {             
                 if (auto length_and_name = inputreader::StringParser(len, "to"s, 2); length_and_name.size() > 1) {
                     output_lengths.push_back(std::move(std::pair{ length_and_name[1], std::stoi(length_and_name[0].substr(0, length_and_name[0].size() - 1)) }));
                 }
@@ -78,7 +78,7 @@ namespace catalogue_core{
             output.name = it->name;
 
             output.stops.reserve(it->stops.size());
-            for (auto& stop : it->stops) {
+            for (const auto& stop : it->stops) {
                 output.stops.push_back(catalogue_->FindBusStop(stop));
             }
 
