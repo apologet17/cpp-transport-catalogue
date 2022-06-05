@@ -4,52 +4,32 @@
 #include <vector>
 #include <deque>
 
-#include "geo.h"
-#include "transport_catalogue.h"
+#include "domain.h"
+#include "request_handler.h"
 
 
 namespace catalogue_core {
+namespace inputreader {
 
-	namespace inputreader {
+	class InputReader {
 
-		enum QueryType {
-			ADD_BUS,
-			ADD_STOP
-		};
+	public:
 
-		struct BusRouteRaw {
-			bool circular;
-			std::string name;
-			std::vector<std::string> stops;
-		};
+		explicit InputReader(RequestHandler& request_handler)
+			: request_handler_(&request_handler) {
+		}
 
-		struct BusStopRaw {
-			transportcatalogue::BusStop bus_stop;
-			std::string lengths;
-		};
+	void AdditionToCatalogue(std::istream& is);
+	void QueryProcessing(std::istream& is, std::ostream& os);
 
-		struct Query {
-			QueryType query_type;
-			BusStopRaw bus_stop;
-			BusRouteRaw bus_route;
-		};
+	private:
 
-		class InputReader {
+		void PrintInformationAboutBus(const domain::RouteStatistic& output, const std::string& name, std::ostream& os) const;
+		void PrintInformationAboutStop(const std::set<std::string_view, std::less<>>& output, const std::string& name, std::ostream& os) const;
+		RequestHandler* request_handler_;
+	};
 
-		public:
-			explicit InputReader(transportcatalogue::TransportCatalogue& catalogue)
-				: catalogue_(&catalogue) {
-			}
-			void AdditionToCatalogue(std::istream& is);
-
-		private:
-			void LoadBufferToCatalogue();
-
-			std::deque<BusRouteRaw> bus_route_buffer_;
-			std::deque<BusStopRaw> bus_stop_buffer_;
-			transportcatalogue::TransportCatalogue* catalogue_;
-		};
-
-		std::istream& operator>>(std::istream& is, Query& q);
-	}
+	std::istream& operator>>(std::istream& is, Query& q);
+	std::istream& operator>>(std::istream& is, QueryToBase& query);
+}
 }

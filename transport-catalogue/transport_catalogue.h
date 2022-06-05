@@ -7,64 +7,40 @@
 #include<unordered_map>
 #include <optional> 
 
-#include "geo.h"
+#include "domain.h"
 
 namespace catalogue_core {
 
-	namespace transportcatalogue {
+namespace transportcatalogue {
 
-		struct RouteStatistic {
-			size_t num_of_stops_;
-			size_t num_of_unique_stops_;
-			int route_length_;
-			double curvature;
-		};
+class TransportCatalogue {
 
-		struct BusStop {
-			std::string name;
-			Coordinates coordinates;
-		};
+public:
+	TransportCatalogue() = default;
 
-		struct BusRoute {
-			bool circular;
-			std::string name;
-			std::vector<BusStop*> stops;
-		};
+	void AddBusRoute(const domain::BusRoute& bus_route);
+	void AddBusStop(const domain::BusStop& bus_stop);
+	//void AddLength(const std::string& bus_stop_name, const std::vector<std::pair<std::string, int>>& lengths);
+	void AddLength(const std::string& bus_stop_name, const std::vector<std::string>names, const std::vector<int>& lengths);
 
-		class StopLengthsHasher {
-		public:
-			size_t operator()(const std::pair<BusStop*, BusStop*>& stop_len) const {
+	domain::BusRoute* FindBusRoute(const std::string_view busroute_name) const;
+	domain::BusStop* FindBusStop(const std::string_view busstop_name) const;
+	const std::set<std::string_view, std::less<>>& AllRoutesNames() const;
 
-				return std::hash<void*>{}(&(*stop_len.first)) + std::hash<void*>{}(&(*stop_len.second)) * 17;
-			}
-		};
+	std::optional<int> GetLength(const std::string& stop_name_first, const std::string& stop_name_second) const;
+	std::optional<domain::RouteStatistic> GetInformationAboutBusRoute(const std::string& busroute_name) const;
+	std::optional<std::set<std::string_view, std::less<>>> GetInformationAboutStop(const std::string& busroute_name) const;
 
-		class TransportCatalogue {
+private:
+	std::list<domain::BusStop> bus_stops_;
+	std::unordered_map<std::string_view, domain::BusStop*> stopname_to_stops_;
 
-		public:
-			TransportCatalogue() = default;
+	std::list<domain::BusRoute> bus_routes_;
+	std::unordered_map<std::string_view, domain::BusRoute*> busname_to_routes_;
+	std::set<std::string_view, std::less<>> routes_names_;
 
-			void AddBusRoute(const BusRoute& bus_route);
-			void AddBusStop(const BusStop& bus_stop);
-			void AddLength(const std::string& bus_stop_name, const std::vector<std::pair<std::string, int>>& lengths);
-
-			BusRoute* FindBusRoute(const std::string& busroute_name) const;
-			BusStop* FindBusStop(const std::string& busstop_name) const;
-
-			std::optional<RouteStatistic> GetInformationAboutBusRoute(const std::string& busroute_name) const;
-			std::optional<std::set<std::string_view, std::less<>>> GetInformationAboutStop(const std::string& busroute_name) const;
-			std::optional<int> GetLength(const std::string& stop_name_first, const std::string& stop_name_second) const;
-
-		private:
-
-			std::list<BusStop> bus_stops_;
-			std::unordered_map<std::string_view, BusStop*> stopname_to_stops_;
-
-			std::list<BusRoute> bus_routes_;
-			std::unordered_map<std::string_view, BusRoute*> busname_to_routes_;
-
-			std::unordered_map<std::string_view, std::set<std::string_view, std::less<>>> buses_for_stop_;
-			std::unordered_map<std::pair<BusStop*, BusStop*>, int, StopLengthsHasher> stop_lengths_;
+	std::unordered_map<std::string_view, std::set<std::string_view, std::less<>>> buses_for_stop_;
+	std::unordered_map<std::pair<domain::BusStop*, domain::BusStop*>, int, domain::StopLengthsHasher> stop_lengths_;
 		};
 	}
 }
