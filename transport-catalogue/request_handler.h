@@ -53,9 +53,7 @@ namespace catalogue_core {
 
     class RequestHandler {
     public:
-        explicit RequestHandler(transportcatalogue::TransportCatalogue& catalogue)
-            : catalogue_(&catalogue) {
-        }
+        explicit RequestHandler(transport_catalogue::TransportCatalogue& catalogue);
 
         void LoadBufferToCatalogue();
         Answer PrepareAnswerFromCatalogue(const QueryToBase& query) const;
@@ -67,7 +65,7 @@ namespace catalogue_core {
 
     private:     
         // RequestHandler использует агрегацию объектов "Транспортный Справочник" и "Визуализатор Карты"
-         transportcatalogue::TransportCatalogue* catalogue_;
+         transport_catalogue::TransportCatalogue* catalogue_;
 
          std::vector<BusRouteRaw> bus_route_buffer_;
          std::vector<BusStopRaw> bus_stop_buffer_; 

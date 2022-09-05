@@ -6,7 +6,7 @@
 
 namespace catalogue_core {
 
-namespace transportcatalogue {
+namespace transport_catalogue {
 
 using namespace domain;
 

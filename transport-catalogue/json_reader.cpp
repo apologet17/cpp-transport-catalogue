@@ -1,31 +1,39 @@
 #include<sstream>
 
 #include "json_reader.h"
+#include "json_builder.h"
 
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
  * а также код обработки запросов к базе и формирование массива ответов в формате JSON
  */
+
 namespace catalogue_core {
 	using namespace std::string_literals;
+	using namespace json;
+
+	 JSONReader::JSONReader(RequestHandler& request_handler, catalogue_core::renderer::MapRenderer& map_renderer)
+		: request_handler_(&request_handler)
+		, map_renderer_(&map_renderer) {
+	}
 
 	svg::Color ConvertJSONToColor(const json::Node& node){
 
 		if (node.IsArray()) {
-			if (node.AsArray().size() == 4) {
-				return svg::Rgba(static_cast<uint8_t>(node.AsArray()[0].AsInt()),
-								static_cast<uint8_t>(node.AsArray()[1].AsInt()),
-								static_cast<uint8_t>(node.AsArray()[2].AsInt()),
-													 node.AsArray()[3].AsDouble());
+			if (const_cast<json::Node&>(node).AsArray().size() == 4) {
+				return svg::Rgba(static_cast<uint8_t>(const_cast<json::Node&>(node).AsArray()[0].AsInt()),
+								static_cast<uint8_t>(const_cast<json::Node&>(node).AsArray()[1].AsInt()),
+								static_cast<uint8_t>(const_cast<json::Node&>(node).AsArray()[2].AsInt()),
+													const_cast<json::Node&>(node).AsArray()[3].AsDouble());
 			}
 			else {
-				return svg::Rgb(static_cast<uint8_t>(node.AsArray()[0].AsInt()),
-								static_cast<uint8_t>(node.AsArray()[1].AsInt()),
-								static_cast<uint8_t>(node.AsArray()[2].AsInt()));
+				return svg::Rgb(static_cast<uint8_t>(const_cast<json::Node&>(node).AsArray()[0].AsInt()),
+								static_cast<uint8_t>(const_cast<json::Node&>(node).AsArray()[1].AsInt()),
+								static_cast<uint8_t>(const_cast<json::Node&>(node).AsArray()[2].AsInt()));
 			}			
 		}
 		else {
-			return node.AsString();
+			return const_cast<json::Node&>(node).AsString();
 		}
 	}
 
@@ -35,27 +43,27 @@ namespace catalogue_core {
 			return;
 		}
 
-		for (auto& base_request : doc.at("base_requests"s).AsArray()) {
+		for (auto& base_request : const_cast<json::Dict&>(doc).at("base_requests"s).AsArray()) {
 			Query q;
-			if (base_request.AsMap().at("type"s) == "Stop"s) {
+			if (base_request.AsDict().at("type"s) == "Stop"s) {
 				q.query_type = QueryType::ADD_STOP;
-				q.bus_stop.bus_stop.name = base_request.AsMap().at("name"s).AsString();
-				q.bus_stop.bus_stop.coordinates.lat = base_request.AsMap().at("latitude"s).AsDouble();
-				q.bus_stop.bus_stop.coordinates.lng = base_request.AsMap().at("longitude"s).AsDouble();
-				if (base_request.AsMap().count("road_distances"s)) {
-					for (auto it = base_request.AsMap().at("road_distances"s).AsMap().begin();
-						it != base_request.AsMap().at("road_distances"s).AsMap().end(); ++it) {
+				q.bus_stop.bus_stop.name = base_request.AsDict().at("name"s).AsString();
+				q.bus_stop.bus_stop.coordinates.lat = base_request.AsDict().at("latitude"s).AsDouble();
+				q.bus_stop.bus_stop.coordinates.lng = base_request.AsDict().at("longitude"s).AsDouble();
+				if (base_request.AsDict().count("road_distances"s)) {
+					for (auto it = base_request.AsDict().at("road_distances"s).AsDict().begin();
+						it != base_request.AsDict().at("road_distances"s).AsDict().end(); ++it) {
 						q.bus_stop.names.push_back(it->first);
 						q.bus_stop.lengths.push_back(it->second.AsInt());
 					}
 				}
 				request_handler_->AddStopsToBuffer(q.bus_stop);
 			}
-			else if (base_request.AsMap().at("type"s) == "Bus"s) {
+			else if (base_request.AsDict().at("type"s) == "Bus"s) {
 				q.query_type = QueryType::ADD_BUS;
-				q.bus_route.circular = base_request.AsMap().at("is_roundtrip"s).AsBool();
-				q.bus_route.name = base_request.AsMap().at("name"s).AsString();
-				for (auto& stop : base_request.AsMap().at("stops"s).AsArray()) {
+				q.bus_route.circular = base_request.AsDict().at("is_roundtrip"s).AsBool();
+				q.bus_route.name = base_request.AsDict().at("name"s).AsString();
+				for (auto& stop : base_request.AsDict().at("stops"s).AsArray()) {
 					q.bus_route.stops.push_back(stop.AsString());
 				}
 				request_handler_->AddRoutesToBuffer(q.bus_route);
@@ -69,11 +77,11 @@ namespace catalogue_core {
 		if (doc.count("stat_requests"s) == 0) {
 			return;
 		}
-
+	
 		os << "["s << std::endl;
 
 		bool first = true;
-		for (auto& stat_request : doc.at("stat_requests"s).AsArray()) {
+		for (auto& stat_request : const_cast<json::Dict&>(doc).at("stat_requests"s).AsArray()) {
 			if (first) {
 				first = false;
 			}
@@ -81,12 +89,12 @@ namespace catalogue_core {
 				os << ","s << std::endl;
 			}
 			QueryToBase q;
-			if (stat_request.AsMap().count("name"s)) {
-				q.name = stat_request.AsMap().at("name"s).AsString();
+			if (stat_request.AsDict().count("name"s)) {
+				q.name = stat_request.AsDict().at("name"s).AsString();
 			}
-			q.id = stat_request.AsMap().at("id"s).AsInt();
+			q.id = stat_request.AsDict().at("id"s).AsInt();
 
-			if (stat_request.AsMap().at("type"s) == "Bus"s) {
+			if (stat_request.AsDict().at("type"s) == "Bus"s) {
 				q.type = QueryToBaseType::BUS_INFO;
 
 				Answer answer = request_handler_->PrepareAnswerFromCatalogue(q);
@@ -98,7 +106,7 @@ namespace catalogue_core {
 					ErrorMessage(answer.id, os);
 				}
 			}
-			else if (stat_request.AsMap().at("type"s) == "Stop"s) {
+			else if (stat_request.AsDict().at("type"s) == "Stop"s) {
 				q.type = QueryToBaseType::STOP_INFO;
 
 				Answer answer = request_handler_->PrepareAnswerFromCatalogue(q);
@@ -110,7 +118,7 @@ namespace catalogue_core {
 					ErrorMessage(answer.id, os);
 				}
 			}
-			else if (stat_request.AsMap().at("type"s) == "Map"s) {
+			else if (stat_request.AsDict().at("type"s) == "Map"s) {
 				std::ostringstream output;
 				map_renderer_->RenderMap(request_handler_->GetAllRoutes(), output);
 				PrintSvg(q.id, output, os);
@@ -136,7 +144,7 @@ namespace catalogue_core {
 			settings.bus_label_font_size = doc.at("bus_label_font_size"s).AsInt();
 		if (doc.count("bus_label_offset"s)) {
 			settings.bus_label_offset.clear();
-			for (const auto& offset : doc.at("bus_label_offset"s).AsArray()) {
+			for (const auto& offset : const_cast<json::Dict&>(doc).at("bus_label_offset"s).AsArray()) {
 				settings.bus_label_offset.push_back(offset.AsDouble());
 			}
 		}
@@ -144,7 +152,7 @@ namespace catalogue_core {
 			settings.stop_label_font_size = doc.at("stop_label_font_size"s).AsInt();
 		if (doc.count("stop_label_offset"s)) {
 			settings.stop_label_offset.clear();
-			for (const auto& offset : doc.at("stop_label_offset"s).AsArray()) {
+			for (const auto& offset : const_cast<json::Dict&>(doc).at("stop_label_offset"s).AsArray()) {
 				settings.stop_label_offset.push_back(offset.AsDouble());
 			}
 		}
@@ -154,7 +162,7 @@ namespace catalogue_core {
 		settings.underlayer_width = doc.at("underlayer_width"s).AsDouble();
 		if (doc.count("color_palette"s)) {
 			settings.color_palette.clear();
-			for (const auto& color : doc.at("color_palette"s).AsArray()) {
+			for (const auto& color : const_cast<json::Dict&>(doc).at("color_palette"s).AsArray()) {
 				settings.color_palette.push_back(ConvertJSONToColor(color));
 			}
 		}
@@ -164,55 +172,77 @@ namespace catalogue_core {
 
 	void JSONReader::QueryProcessing(std::istream& is, [[maybe_unused]]std::ostream& os) {
 
-		std::map<std::string, json::Node> doc = json::Load(is).GetRoot().AsMap();
-		
+		std::map<std::string, json::Node> doc = const_cast<json::Node&>(json::Load(is).GetRoot()).AsDict();
+
 		AddStopsAndRoutes(doc);
 		if (doc.count("render_settings"s))
-			FillRenderSettings(doc.at("render_settings"s).AsMap());
+			FillRenderSettings(doc.at("render_settings"s).AsDict());
 		ToProcessTheRequests(doc, os);
 	}
 
 	void JSONReader::PrintInformationAboutBus(const domain::RouteStatistic& output, int id, std::ostream& os) const {
-		json::Dict formatted_answer;
-
-		formatted_answer["curvature"s] = json::Node(output.curvature);
-		formatted_answer["route_length"s] = json::Node(static_cast<double>(output.route_length_));
-		formatted_answer["stop_count"s] = json::Node(output.num_of_stops_);
-		formatted_answer["unique_stop_count"s] = json::Node(output.num_of_unique_stops_);
-		formatted_answer["request_id"s] = json::Node(id);
-
-		json::PrintNode(json::Node(formatted_answer), os);
+	
+		json::Print(
+			json::Document{
+				json::Builder{}
+				.StartDict()
+					.Key("curvature"s).Value(output.curvature)
+					.Key("route_length"s).Value(static_cast<double>(output.route_length_))
+					.Key("stop_count"s).Value(output.num_of_stops_)
+					.Key("unique_stop_count"s).Value(output.num_of_unique_stops_)
+					.Key("request_id"s).Value(id)
+				.EndDict()
+				.Build()
+			},
+			os
+		); 
 	}
 
 	void JSONReader::PrintSvg(int id, std::ostringstream& input, std::ostream& os) const {
-		json::Dict formatted_answer;
-
-		formatted_answer["map"s] = json::Node(input.str());
-		formatted_answer["request_id"s] = json::Node(id);
-
-		json::PrintNode(json::Node(formatted_answer), os);
+	
+		json::Print(
+			json::Document{
+				json::Builder{}
+				.StartDict()
+					.Key("map"s).Value(input.str())
+					.Key("request_id"s).Value(id)
+				.EndDict()
+				.Build()
+			},
+			os
+		);
 	}
 
 	void JSONReader::PrintInformationAboutStop(const std::set<std::string_view, std::less<>>& output, int id, std::ostream& os) const {
-		json::Dict formatted_answer;
-		json::Array stops;
+
+		auto first_part = json::Builder{}.StartDict()
+			.Key("buses"s).StartArray();
 
 		for (const auto& stop : output) {
-			stops.push_back(json::Node(std::string(stop)));
+			first_part.Value(std::string(stop));
 		}
 
-		formatted_answer["buses"s] = json::Node(stops);
-		formatted_answer["request_id"s] = json::Node(id);
-
-		json::PrintNode(json::Node(formatted_answer), os);
+		json::Print(
+			json::Document{ first_part.EndArray()
+			.Key("request_id"s).Value(id)
+			.EndDict().Build()
+			},
+			os
+		);
 	}
 
 	void JSONReader::ErrorMessage(int id, std::ostream& os) const {
-		json::Dict formatted_answer;
-
-		formatted_answer["error_message"s] = json::Node("not found"s);
-		formatted_answer["request_id"s] = json::Node(id);
-
-		json::PrintNode(json::Node(formatted_answer), os);
+		
+		json::Print(
+			json::Document{
+				json::Builder{}
+				.StartDict()
+					.Key("error_message"s).Value("not found"s)
+					.Key("request_id"s).Value(id)
+				.EndDict()
+				.Build()
+			},
+			os
+		);
 	}
 }

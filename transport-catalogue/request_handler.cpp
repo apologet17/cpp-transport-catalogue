@@ -18,6 +18,10 @@ namespace catalogue_core {
 
     using namespace std::string_literals;
 
+    RequestHandler::RequestHandler(transport_catalogue::TransportCatalogue& catalogue)
+        : catalogue_(&catalogue) {
+    }
+
     const std::vector<domain::BusRoute*> RequestHandler::GetAllRoutes() const {
         std::vector<domain::BusRoute*> output;
         for (const auto& route_name : catalogue_->AllRoutesNames()) {

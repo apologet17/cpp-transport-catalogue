@@ -11,7 +11,7 @@
 
 namespace catalogue_core {
 
-namespace transportcatalogue {
+namespace transport_catalogue {
 
 class TransportCatalogue {
 

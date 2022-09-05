@@ -13,10 +13,7 @@ namespace catalogue_core {
 
 	public:
 
-		explicit JSONReader(RequestHandler& request_handler, catalogue_core::renderer::MapRenderer& map_renderer)
-			: request_handler_(&request_handler) 
-			, map_renderer_(&map_renderer){
-		}
+		explicit JSONReader(RequestHandler& request_handler, catalogue_core::renderer::MapRenderer& map_renderer);
 
 		void QueryProcessing(std::istream& is, [[maybe_unused]] std::ostream& os);
 
