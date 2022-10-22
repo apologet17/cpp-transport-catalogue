@@ -31,6 +31,12 @@ public:
 	std::optional<domain::RouteStatistic> GetInformationAboutBusRoute(const std::string& busroute_name) const;
 	std::optional<std::set<std::string_view, std::less<>>> GetInformationAboutStop(const std::string& busroute_name) const;
 
+	void SetAllRoutes();
+	const std::vector<domain::BusRoute*>& GetAllRoutes() const;
+	 std::vector<const domain::BusStop*> GetAllStops() const;
+	 size_t GetNumStops() const;
+	 size_t GetNumStopsByBus() const;
+
 private:
 	std::list<domain::BusStop> bus_stops_;
 	std::unordered_map<std::string_view, domain::BusStop*> stopname_to_stops_;
@@ -41,6 +47,9 @@ private:
 
 	std::unordered_map<std::string_view, std::set<std::string_view, std::less<>>> buses_for_stop_;
 	std::unordered_map<std::pair<domain::BusStop*, domain::BusStop*>, int, domain::StopLengthsHasher> stop_lengths_;
+
+	std::vector<domain::BusRoute*> all_routes_;
+	size_t num_stops_by_bus_;
 		};
 	}
 }

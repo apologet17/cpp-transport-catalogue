@@ -19,15 +19,12 @@ namespace catalogue_core {
     using namespace std::string_literals;
 
     RequestHandler::RequestHandler(transport_catalogue::TransportCatalogue& catalogue)
-        : catalogue_(&catalogue) {
+        : catalogue_(&catalogue){
     }
 
     const std::vector<domain::BusRoute*> RequestHandler::GetAllRoutes() const {
-        std::vector<domain::BusRoute*> output;
-        for (const auto& route_name : catalogue_->AllRoutesNames()) {
-            output.push_back(catalogue_->FindBusRoute(route_name));
-        }
-        return output;
+
+        return catalogue_->GetAllRoutes();
     }
 
     Answer RequestHandler::PrepareAnswerFromCatalogue(const QueryToBase& query) const {
@@ -74,6 +71,8 @@ namespace catalogue_core {
             catalogue_->AddBusRoute(output);
         }
         bus_route_buffer_.clear();
+
+        catalogue_->SetAllRoutes();
     }
 
     void RequestHandler::AddStopsToBuffer(const BusStopRaw& bus_stop) {
@@ -82,5 +81,13 @@ namespace catalogue_core {
 
     void RequestHandler::AddRoutesToBuffer(const BusRouteRaw& bus_route) {
         bus_route_buffer_.push_back(bus_route);
+    }
+
+    void RequestHandler::CreateRouter(router::RouterSettings settings) {
+        transport_router_ = std::make_unique<router::TransportRouter>(settings, *catalogue_);
+    }
+
+    std::optional<std::pair<std::vector<router::RoutePart>, double>> RequestHandler::BuildFastestRoute(const std::string& from, const std::string& to) {     
+        return transport_router_->BuildFastestRoute(catalogue_->FindBusStop(from), catalogue_->FindBusStop(to));
     }
 }

@@ -14,7 +14,7 @@ namespace catalogue_core {
 
 	 JSONReader::JSONReader(RequestHandler& request_handler, catalogue_core::renderer::MapRenderer& map_renderer)
 		: request_handler_(&request_handler)
-		, map_renderer_(&map_renderer) {
+		, map_renderer_(&map_renderer){
 	}
 
 	svg::Color ConvertJSONToColor(const json::Node& node){
@@ -70,6 +70,7 @@ namespace catalogue_core {
 			}
 		}
 		request_handler_->LoadBufferToCatalogue();
+
 	}
 
 	void JSONReader::ToProcessTheRequests(const json::Dict& doc, std::ostream& os) {
@@ -96,7 +97,7 @@ namespace catalogue_core {
 
 			if (stat_request.AsDict().at("type"s) == "Bus"s) {
 				q.type = QueryToBaseType::BUS_INFO;
-
+	
 				Answer answer = request_handler_->PrepareAnswerFromCatalogue(q);
 
 				if (auto statistic = std::get<std::optional<domain::RouteStatistic>>(answer.buses_and_stops);  statistic.has_value()) {
@@ -117,6 +118,19 @@ namespace catalogue_core {
 				else {
 					ErrorMessage(answer.id, os);
 				}
+			}
+			else if (stat_request.AsDict().at("type"s) == "Route"s) {
+				q.type = QueryToBaseType::ROUTE_BUILD;
+				
+				auto route = request_handler_->BuildFastestRoute(stat_request.AsDict().at("from"s).AsString(), stat_request.AsDict().at("to"s).AsString());
+
+				if (route.has_value()) {
+					PrintFastestRoute(route.value(), q.id, os);
+				}
+				else {
+					ErrorMessage(q.id, os);
+				}
+
 			}
 			else if (stat_request.AsDict().at("type"s) == "Map"s) {
 				std::ostringstream output;
@@ -170,6 +184,15 @@ namespace catalogue_core {
 		map_renderer_->LoadRendererSettings(std::move(settings));		
 	}
 
+	void JSONReader::CreateRouter(const json::Dict& doc) {
+		router::RouterSettings settings;
+		if (doc.count("bus_wait_time"s))
+			settings.bus_wait_time = doc.at("bus_wait_time"s).AsInt();
+		if (doc.count("bus_velocity"s))
+			settings.bus_velocity = doc.at("bus_velocity"s).AsDouble();
+		request_handler_->CreateRouter(settings);
+	}
+
 	void JSONReader::QueryProcessing(std::istream& is, [[maybe_unused]]std::ostream& os) {
 
 		std::map<std::string, json::Node> doc = const_cast<json::Node&>(json::Load(is).GetRoot()).AsDict();
@@ -177,6 +200,10 @@ namespace catalogue_core {
 		AddStopsAndRoutes(doc);
 		if (doc.count("render_settings"s))
 			FillRenderSettings(doc.at("render_settings"s).AsDict());
+		if (doc.count("routing_settings"s)) {
+			CreateRouter(doc.at("routing_settings"s).AsDict());
+		}
+
 		ToProcessTheRequests(doc, os);
 	}
 
@@ -229,6 +256,34 @@ namespace catalogue_core {
 			},
 			os
 		);
+	}
+
+	void JSONReader::PrintFastestRoute(const std::pair<std::vector<router::RoutePart>, double>& input, int id, std::ostream& os) const {
+
+		auto first_part = json::Builder{}.StartDict()
+			.Key("request_id"s).Value(id)
+			.Key("total_time"s).Value(input.second)
+			.Key("items"s).StartArray();
+
+		for (const auto& part : input.first) {
+			if (part.wait_or_bus == router::WaitOrBus::WAIT) {
+				first_part.StartDict()
+					.Key("type"s).Value("Wait"s)
+					.Key("stop_name"s).Value(std::string(part.stop_name))
+					.Key("time"s).Value(part.wait_time)
+					.EndDict();
+			}
+			else if (part.wait_or_bus == router::WaitOrBus::BUS) {
+				first_part.StartDict()
+					.Key("type"s).Value("Bus"s)
+					.Key("bus"s).Value(std::string(part.bus_name))
+					.Key("span_count"s).Value(part.span_count)
+					.Key("time"s).Value(part.bus_time)
+					.EndDict();
+			}
+		}
+
+		json::Print(json::Document{ first_part.EndArray().EndDict().Build()}, os	);
 	}
 
 	void JSONReader::ErrorMessage(int id, std::ostream& os) const {

@@ -69,9 +69,12 @@ void TransportCatalogue::AddLength(const std::string& bus_stop_name, const std::
 }
 
 std::optional<int> TransportCatalogue::GetLength(const std::string& stop_name_first, const std::string& stop_name_second) const {
-			auto pair_stops = std::make_pair(stopname_to_stops_.at(stop_name_first), stopname_to_stops_.at(stop_name_second));
+			
 
-			if (stop_lengths_.count(pair_stops)) {
+			if (auto pair_stops = std::make_pair(stopname_to_stops_.at(stop_name_first), stopname_to_stops_.at(stop_name_second)); stop_lengths_.count(pair_stops)) {
+				return  stop_lengths_.at(pair_stops);
+			}
+			else if (auto pair_stops = std::make_pair(stopname_to_stops_.at(stop_name_second), stopname_to_stops_.at(stop_name_first)); stop_lengths_.count(pair_stops)) {
 				return  stop_lengths_.at(pair_stops);
 			}
 			else {
@@ -150,6 +153,38 @@ std::optional<std::set<std::string_view, std::less<>>> TransportCatalogue::GetIn
 	else {
 		return zeroset;
 	}
+}
+
+void TransportCatalogue::SetAllRoutes() {
+
+	all_routes_.clear();
+	num_stops_by_bus_ = 0;
+	for (const auto& route_name : AllRoutesNames()) {
+		all_routes_.push_back(FindBusRoute(route_name));
+		num_stops_by_bus_ += all_routes_.back()->stops.size();
+	}
+}
+
+const std::vector<domain::BusRoute*>& TransportCatalogue::GetAllRoutes() const {
+
+	return all_routes_;
+}
+
+ size_t TransportCatalogue::GetNumStops() const {
+	return bus_stops_.size();
+}
+ 
+size_t TransportCatalogue::GetNumStopsByBus() const {
+	return num_stops_by_bus_;
+ }
+
+ std::vector<const domain::BusStop*> TransportCatalogue::GetAllStops() const {
+	 std::vector<const domain::BusStop*> output;
+	 output.reserve(bus_stops_.size());
+	 for (auto& stop : bus_stops_) {
+		 output.push_back(&stop);
+	 }
+	return output;
 }
 
 }

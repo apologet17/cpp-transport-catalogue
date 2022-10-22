@@ -39,19 +39,19 @@ void MapRenderer::RenderMap(const std::vector<domain::BusRoute*>& routes, std::o
 }
 
 void MapRenderer::CreateStopName(svg::Text& stop_name, svg::Document& doc) const {
-	stop_name.SetFillColor(renderer_settings_.underlayer_color);
-	stop_name.SetStrokeColor(renderer_settings_.underlayer_color);
-	stop_name.SetStrokeWidth(renderer_settings_.underlayer_width);
-	stop_name.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-	stop_name.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
+	stop_name.SetFillColor(renderer_settings_.underlayer_color)
+			 .SetStrokeColor(renderer_settings_.underlayer_color)
+			 .SetStrokeWidth(renderer_settings_.underlayer_width)
+			 .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+			 .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
 
 	doc.AddPtr(std::make_unique<svg::Text>(stop_name));
 
-	stop_name.SetFillColor("black"s);
-	stop_name.ResetStrokeColor();
-	stop_name.ResetStrokeWidth();
-	stop_name.ResetStrokeLineCap();
-	stop_name.ResetStrokeLineJoin();
+	stop_name.SetFillColor("black"s)
+			 .ResetStrokeColor()
+			 .ResetStrokeWidth()
+		     .ResetStrokeLineCap()
+			 .ResetStrokeLineJoin();
 
 	doc.AddPtr(std::make_unique<svg::Text>(stop_name));
 }
@@ -60,9 +60,9 @@ void MapRenderer::DrawStopNames(const std::set<domain::BusStop*, decltype(cmp)>&
 
 	svg::Text stop_name;
 
-	stop_name.SetOffset(svg::Point(renderer_settings_.stop_label_offset[0], renderer_settings_.stop_label_offset[1]));
-	stop_name.SetFontSize(renderer_settings_.stop_label_font_size);
-	stop_name.SetFontFamily("Verdana"s);
+	stop_name.SetOffset(svg::Point(renderer_settings_.stop_label_offset[0], renderer_settings_.stop_label_offset[1]))
+			 .SetFontSize(renderer_settings_.stop_label_font_size)
+			 .SetFontFamily("Verdana"s);
 
 	for (const auto stop : stops_for_output) {
 		stop_name.SetPosition(sphere_projector(stop->coordinates));
@@ -73,19 +73,19 @@ void MapRenderer::DrawStopNames(const std::set<domain::BusStop*, decltype(cmp)>&
 
 void MapRenderer::CreateRouteName(svg::Text& route_name, svg::Document& doc, svg::Color color) const {
 
-	route_name.SetFillColor(renderer_settings_.underlayer_color);
-	route_name.SetStrokeColor(renderer_settings_.underlayer_color);
-	route_name.SetStrokeWidth(renderer_settings_.underlayer_width);
-	route_name.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-	route_name.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
+	route_name.SetFillColor(renderer_settings_.underlayer_color)
+			  .SetStrokeColor(renderer_settings_.underlayer_color)
+			  .SetStrokeWidth(renderer_settings_.underlayer_width)
+			  .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+			  .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
 
 	doc.AddPtr(std::make_unique<svg::Text>(route_name));
 
-	route_name.SetFillColor(color);
-	route_name.ResetStrokeColor();
-	route_name.ResetStrokeWidth();
-	route_name.ResetStrokeLineCap();
-	route_name.ResetStrokeLineJoin();
+	route_name.SetFillColor(color)
+			  .ResetStrokeColor()
+			  .ResetStrokeWidth()
+			  .ResetStrokeLineCap()
+			  .ResetStrokeLineJoin();
 
 	doc.AddPtr(std::make_unique<svg::Text>(route_name));
 }
@@ -107,10 +107,10 @@ void MapRenderer::DrawRouteNames(const std::vector<domain::BusRoute*>& routes, s
 
 	svg::Text route_name;
 
-	route_name.SetOffset(svg::Point(renderer_settings_.bus_label_offset[0], renderer_settings_.bus_label_offset[1]));
-	route_name.SetFontSize(renderer_settings_.bus_label_font_size);
-	route_name.SetFontFamily("Verdana"s);
-	route_name.SetFontWeight("bold"s);
+	route_name.SetOffset(svg::Point(renderer_settings_.bus_label_offset[0], renderer_settings_.bus_label_offset[1]))
+			  .SetFontSize(renderer_settings_.bus_label_font_size)
+			  .SetFontFamily("Verdana"s)
+			  .SetFontWeight("bold"s);
 
 	size_t color_number = 0;
 	for (const auto route : routes) {
@@ -150,11 +150,11 @@ void MapRenderer::DrawLines(const std::vector<domain::BusRoute*>& routes, svg::D
 			}
 			route_curve.AddPoint(sphere_projector((*route->stops.begin())->coordinates));
 		}
-		route_curve.SetStrokeColor(renderer_settings_.color_palette[color_number]);
-		route_curve.SetStrokeWidth(renderer_settings_.line_width);
-		route_curve.SetFillColor(svg::NoneColor);
-		route_curve.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-		route_curve.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
+		route_curve.SetStrokeColor(renderer_settings_.color_palette[color_number])
+				   .SetStrokeWidth(renderer_settings_.line_width)
+				   .SetFillColor(svg::NoneColor)
+				   .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+				   .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
 		doc.AddPtr(std::move(std::make_unique<svg::Polyline>(route_curve)));
 		color_number = (color_number == renderer_settings_.color_palette.size() - 1) ? 0 : color_number + 1;
 	}
