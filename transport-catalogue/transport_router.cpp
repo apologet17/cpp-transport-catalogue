@@ -101,5 +101,33 @@ namespace catalogue_core {
 
 			return std::make_pair(output, search_result->weight);
 		}
+	
+		const graph::DirectedWeightedGraph<double>& TransportRouter::GetGraph() const {
+			return graph_;
+		}
+	
+		const RouterSettings& TransportRouter::GetRouterSettings() const {
+			return router_settings_;
+		}
+
+		const std::unordered_map<const domain::BusStop*, Exchange>& TransportRouter::GetBusstopToVertex() const {
+			return bus_stop_to_vertex_;
+		}
+	
+		const graph::Router<double>::RoutesInternalData& TransportRouter::GetRouterData() const {
+			return router_->GetRouteInternalData();
+		}
+
+		const std::vector<RoutePart>& TransportRouter::GetEdgesContent() const {
+			return edges_content_;
+		}
+
+		const graph::DirectedWeightedGraph<double>& TransportRouter::GetGraphLink() const {
+			return graph_;
+		}
+
+		void TransportRouter::SetRouterLink(std::unique_ptr<graph::Router<double>>&& link) {
+			router_ = std::move(link);
+		}
 	}
 }

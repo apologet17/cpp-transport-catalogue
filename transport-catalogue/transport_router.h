@@ -12,9 +12,8 @@ namespace catalogue_core{
 	namespace router {
 
 		enum WaitOrBus {
-			WAIT,
-			BUS,
-			EXCHANGE
+			WAIT = 0,
+			BUS  = 1
 		};
 
 		struct RouterSettings {
@@ -44,11 +43,38 @@ namespace catalogue_core{
 		class TransportRouter {
 		public:
 			explicit TransportRouter(const RouterSettings& settings, catalogue_core::transport_catalogue::TransportCatalogue& cat);
-				
+			
+			explicit TransportRouter(catalogue_core::transport_catalogue::TransportCatalogue& cat,
+										RouterSettings&& router_settings_,
+										graph::DirectedWeightedGraph<double>&& graph,
+										std::unordered_map<const domain::BusStop*, Exchange>&& bus_stop_to_vertex,
+										std::vector<RoutePart>&& edges_content)
+				: cat_(cat)
+				, router_settings_(std::move(router_settings_))
+				, graph_(std::move(graph))
+				, bus_stop_to_vertex_(std::move(bus_stop_to_vertex))
+				, edges_content_(std::move(edges_content)) {
+
+			}
+
 			void LoadRouterSettings(const RouterSettings& settings);
 			std::optional<std::pair<std::vector<router::RoutePart>, double>> BuildFastestRoute(domain::BusStop* start, domain::BusStop* finish);
 
-			//void TransferCreate(domain::BusStop* stop, graph::VertexId from);
+			void TransferCreate(domain::BusStop* stop, graph::VertexId from);
+
+			const graph::DirectedWeightedGraph<double>& GetGraph() const;
+
+			const RouterSettings& GetRouterSettings() const;
+
+			const std::unordered_map<const domain::BusStop*, Exchange>& GetBusstopToVertex() const;
+
+			const graph::Router<double>::RoutesInternalData& GetRouterData() const;
+
+			const std::vector<RoutePart>& GetEdgesContent() const;
+
+			const graph::DirectedWeightedGraph<double>& GetGraphLink() const;
+
+			void SetRouterLink(std::unique_ptr<graph::Router<double>>&& link);
 
 		private:
 			catalogue_core::transport_catalogue::TransportCatalogue& cat_;

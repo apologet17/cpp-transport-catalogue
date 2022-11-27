@@ -5,6 +5,8 @@
 
 #include "transport_catalogue.h"
 #include "transport_router.h"
+#include "map_renderer.h"
+#include "serialization.h"
 
 // Класс RequestHandler играет роль Фасада, упрощающего взаимодействие JSON reader-а
 // с другими подсистемами приложения.
@@ -56,13 +58,19 @@ namespace catalogue_core {
 
     class RequestHandler {
     public:
-        explicit RequestHandler(transport_catalogue::TransportCatalogue& catalogue);
+        explicit RequestHandler(transport_catalogue::TransportCatalogue& catalogue,
+                                           renderer::MapRenderer& map_renderer_);
 
         void LoadBufferToCatalogue();
         Answer PrepareAnswerFromCatalogue(const QueryToBase& query) const;
         void AddStopsToBuffer(const BusStopRaw& bus_stop);
         void AddRoutesToBuffer(const BusRouteRaw& bus_route);
         void AddQueryToBuffer(const QueryToBase& query);
+        void RenderMap(std::ostream& out);
+        void LoadRendererSettings(renderer::RendererSettings&& settings);
+        bool SerializeFull();
+        bool DerializeFull();
+        void FillSerializeSettings(const std::string& filename);
 
         const std::vector<domain::BusRoute*> GetAllRoutes() const;
 
@@ -71,7 +79,9 @@ namespace catalogue_core {
     private:     
         // RequestHandler использует агрегацию объектов "Транспортный Справочник" и "Визуализатор Карты"
          transport_catalogue::TransportCatalogue* catalogue_;
+         renderer::MapRenderer* map_renderer_;
          std::unique_ptr<router::TransportRouter> transport_router_ = nullptr;
+         serializator::Serialization serializator_;
 
          std::vector<BusRouteRaw> bus_route_buffer_;
          std::vector<BusStopRaw> bus_stop_buffer_; 

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+import "graph.proto";
+
+package transport_serialize;
+
+message EdgeId{
+	uint32 edge = 1;
+	bool has_content = 2;
+}
+
+message RouteInternalData{
+	double weight = 1;
+	EdgeId edge_id = 3;
+	bool has_content = 2;
+}
+
+message Exchange{
+	uint32 interface_vertex = 1;
+	uint32 bus_vertex = 2;
+}
+
+message InternalDataIn{
+	repeated RouteInternalData route_internal_data= 1;
+}
+
+message RouterPart{
+	bool wait_or_bus = 1;
+	uint32 bus_base_number = 2;
+	uint32 stop_base_number = 3;
+	uint32 wait_time = 4;
+	double bus_time = 5;
+	uint32 span_count = 6;
+}
+
+message RouterSettings {
+    uint32 wait_time = 1;
+    double bus_velocity = 2;
+}  
+
+message Router {
+	Graph graph = 1;
+	RouterSettings router_settings = 2;
+	repeated Exchange bus_stop_to_vertex = 4;
+	repeated InternalDataIn internal_data = 3;
+	repeated RouterPart edges_content = 5;
+}

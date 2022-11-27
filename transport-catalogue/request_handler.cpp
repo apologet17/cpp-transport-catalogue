@@ -18,8 +18,10 @@ namespace catalogue_core {
 
     using namespace std::string_literals;
 
-    RequestHandler::RequestHandler(transport_catalogue::TransportCatalogue& catalogue)
-        : catalogue_(&catalogue){
+    RequestHandler::RequestHandler(transport_catalogue::TransportCatalogue& catalogue,
+                                    renderer::MapRenderer& map_renderer)
+        : catalogue_(&catalogue)
+        , map_renderer_(&map_renderer){
     }
 
     const std::vector<domain::BusRoute*> RequestHandler::GetAllRoutes() const {
@@ -83,11 +85,36 @@ namespace catalogue_core {
         bus_route_buffer_.push_back(bus_route);
     }
 
+    void RequestHandler::RenderMap(std::ostream& out) {
+        map_renderer_->RenderMap(catalogue_->GetAllRoutes(), out);
+    }
+
+    void RequestHandler::LoadRendererSettings(renderer::RendererSettings&& settings) {
+        map_renderer_->LoadRendererSettings(std::move(settings));
+    }
+
     void RequestHandler::CreateRouter(router::RouterSettings settings) {
         transport_router_ = std::make_unique<router::TransportRouter>(settings, *catalogue_);
     }
 
+
     std::optional<std::pair<std::vector<router::RoutePart>, double>> RequestHandler::BuildFastestRoute(const std::string& from, const std::string& to) {     
         return transport_router_->BuildFastestRoute(catalogue_->FindBusStop(from), catalogue_->FindBusStop(to));
+    }
+
+    void RequestHandler::FillSerializeSettings(const std::string& filename) {
+        serializator_.SetSettings(filename);
+    }
+
+    bool RequestHandler::SerializeFull() {
+
+       return serializator_.SerializeFull(catalogue_, map_renderer_, transport_router_);
+
+    }
+
+    bool RequestHandler::DerializeFull() {
+
+       return serializator_.DeserializeFull(catalogue_, map_renderer_, transport_router_);
+
     }
 }

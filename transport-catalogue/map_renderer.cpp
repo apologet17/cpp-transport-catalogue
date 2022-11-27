@@ -161,8 +161,11 @@ void MapRenderer::DrawLines(const std::vector<domain::BusRoute*>& routes, svg::D
 }
 
 void MapRenderer::LoadRendererSettings(RendererSettings&& renderer_settings) {
-	renderer_settings_ = renderer_settings;
+	renderer_settings_ = std::move(renderer_settings);
 }
 
+const RendererSettings& MapRenderer::GetLoadRendererSettings() const {
+	return renderer_settings_;
+}
 }
 }

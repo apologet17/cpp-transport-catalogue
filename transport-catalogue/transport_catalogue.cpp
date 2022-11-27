@@ -34,21 +34,24 @@ BusStop* TransportCatalogue::FindBusStop(const std::string_view busstop_name) co
 			}
 		}
 
-void TransportCatalogue::AddBusStop(const BusStop& bus_stop) {
+BusStop* TransportCatalogue::AddBusStop(const BusStop& bus_stop) {
 			auto it = bus_stops_.insert(bus_stops_.begin(), bus_stop);
 			stopname_to_stops_[it->name] = &(*it);
+			return  &(*it);
 		}
 
-void TransportCatalogue::AddBusRoute(const BusRoute& bus_route) {
+BusRoute* TransportCatalogue::AddBusRoute(const BusRoute& bus_route) {
 			auto ptr = bus_routes_.insert(bus_routes_.begin(), bus_route);
 			busname_to_routes_[ptr->name] = &(*ptr);
 			for (auto& stop : bus_route.stops) {
 				buses_for_stop_[stop->name].insert(ptr->name);
 			}
 			routes_names_.insert(ptr->name);
+
+			return &(*ptr);
 		}
 
-void TransportCatalogue::AddLength(const std::string& bus_stop_name, const std::vector<std::string>names, const std::vector<int>& lengths) {
+void TransportCatalogue::AddLength(const std::string& bus_stop_name, const std::vector<std::string> names, const std::vector<int>& lengths) {
 
 	using namespace std::string_literals;
 
@@ -66,6 +69,10 @@ void TransportCatalogue::AddLength(const std::string& bus_stop_name, const std::
 	else {
 		throw std::invalid_argument("AddLength: Unknown first bus stop name"s);
 	}
+}
+
+void TransportCatalogue::AddLengthByPtr(const BusStop* first_stop, const BusStop* second_stop, int length) {
+	stop_lengths_[std::make_pair(const_cast<BusStop*>(first_stop), const_cast<BusStop*>(second_stop))] = length;
 }
 
 std::optional<int> TransportCatalogue::GetLength(const std::string& stop_name_first, const std::string& stop_name_second) const {
@@ -117,7 +124,7 @@ std::optional<domain::RouteStatistic> TransportCatalogue::GetInformationAboutBus
 				stopname_to_stops_.at((*(first + 1))->name)->coordinates);
 		}
 		output.curvature *= 2.0;
-		output.num_of_stops_ = 2 * route_ptr->stops.size() - 1;
+		output.num_of_stops_ = static_cast<int>(2 * route_ptr->stops.size()) - 1;
 	}
 	else {
 		for (auto first = route_ptr->stops.begin(); first != route_ptr->stops.end() - 1; ++first) {
@@ -133,12 +140,12 @@ std::optional<domain::RouteStatistic> TransportCatalogue::GetInformationAboutBus
 			output.curvature += ComputeDistance(stopname_to_stops_.at((*first)->name)->coordinates,
 												stopname_to_stops_.at((*(first + 1))->name)->coordinates);
 		}
-		output.num_of_stops_ = route_ptr->stops.size();
+		output.num_of_stops_ = static_cast<int>(route_ptr->stops.size());
 	}
 
 	output.curvature = static_cast<double>(output.route_length_) / output.curvature;
 	route.insert((*(route_ptr->stops.end() - 1))->name);
-	output.num_of_unique_stops_ = route.size();
+	output.num_of_unique_stops_ = static_cast<int>(route.size());
 
 	return output;
 }
@@ -154,6 +161,7 @@ std::optional<std::set<std::string_view, std::less<>>> TransportCatalogue::GetIn
 		return zeroset;
 	}
 }
+
 
 void TransportCatalogue::SetAllRoutes() {
 
@@ -177,7 +185,7 @@ const std::vector<domain::BusRoute*>& TransportCatalogue::GetAllRoutes() const {
 size_t TransportCatalogue::GetNumStopsByBus() const {
 	return num_stops_by_bus_;
  }
-
+ 
  std::vector<const domain::BusStop*> TransportCatalogue::GetAllStops() const {
 	 std::vector<const domain::BusStop*> output;
 	 output.reserve(bus_stops_.size());
@@ -186,6 +194,10 @@ size_t TransportCatalogue::GetNumStopsByBus() const {
 	 }
 	return output;
 }
+
+ const std::unordered_map<std::pair<domain::BusStop*, domain::BusStop*>, int, domain::StopLengthsHasher>& TransportCatalogue::GetAllLengths() const {
+	 return stop_lengths_;
+ }
 
 }
 }

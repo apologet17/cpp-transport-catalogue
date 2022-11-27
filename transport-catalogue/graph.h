@@ -26,12 +26,19 @@ private:
 public:
     DirectedWeightedGraph() = default;
     explicit DirectedWeightedGraph(size_t vertex_count);
+    explicit DirectedWeightedGraph(std::vector<Edge<Weight>>&& edges, std::vector<IncidenceList>&& incidence_lists)
+                                    : edges_(std::move(edges))
+                                    , incidence_lists_(std::move(incidence_lists)){
+
+    }
+
     EdgeId AddEdge(const Edge<Weight>& edge);
 
     size_t GetVertexCount() const;
     size_t GetEdgeCount() const;
     const Edge<Weight>& GetEdge(EdgeId edge_id) const;
     IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
+
 
 private:
     std::vector<Edge<Weight>> edges_;

@@ -18,10 +18,11 @@ class TransportCatalogue {
 public:
 	TransportCatalogue() = default;
 
-	void AddBusRoute(const domain::BusRoute& bus_route);
-	void AddBusStop(const domain::BusStop& bus_stop);
-	//void AddLength(const std::string& bus_stop_name, const std::vector<std::pair<std::string, int>>& lengths);
+	[[nodiscard]] domain::BusRoute* AddBusRoute(const domain::BusRoute& bus_route);
+	[[nodiscard]] domain::BusStop* AddBusStop(const domain::BusStop& bus_stop);
+
 	void AddLength(const std::string& bus_stop_name, const std::vector<std::string>names, const std::vector<int>& lengths);
+	void AddLengthByPtr(const domain::BusStop* first_stop, const domain::BusStop* second_stop, int length);
 
 	domain::BusRoute* FindBusRoute(const std::string_view busroute_name) const;
 	domain::BusStop* FindBusStop(const std::string_view busstop_name) const;
@@ -34,6 +35,7 @@ public:
 	void SetAllRoutes();
 	const std::vector<domain::BusRoute*>& GetAllRoutes() const;
 	 std::vector<const domain::BusStop*> GetAllStops() const;
+	const std::unordered_map<std::pair<domain::BusStop*, domain::BusStop*>, int, domain::StopLengthsHasher>& GetAllLengths() const;
 	 size_t GetNumStops() const;
 	 size_t GetNumStopsByBus() const;
 

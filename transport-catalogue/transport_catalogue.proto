@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "map_renderer.proto";
+import "transport_router.proto";
+
+package transport_serialize;
+
+message Coordinates{
+    double lat = 1; 
+    double lng = 2;
+}
+
+message BusStop{
+    string name = 1;
+    Coordinates coordinates = 2;
+}  
+
+message Length {
+    uint32  first_stop = 1;
+    uint32  second_stop = 2;
+    uint32  length = 3;
+}
+
+message BusRoute{
+    bool circular = 1;
+    string name = 2;
+    repeated uint32 num_stops = 3;
+} 
+
+message Catalogue {
+    repeated  BusStop stops = 1;
+    repeated  BusRoute buses = 2;
+    repeated  Length lengths = 3;
+}
+
+message FullBase {
+    Catalogue  catalogue = 1;
+    Settings   settings = 2;
+    Router router = 3;   
+}

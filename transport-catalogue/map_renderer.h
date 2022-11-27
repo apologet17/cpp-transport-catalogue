@@ -119,6 +119,7 @@ namespace renderer {
 		MapRenderer() = default;
         void RenderMap(const std::vector<domain::BusRoute*>& routes, std::ostream& os) const;
 		void LoadRendererSettings(RendererSettings&& renderer_settings);
+        const RendererSettings& GetLoadRendererSettings() const;
 
 	private:
         void DrawLines(const std::vector<domain::BusRoute*>& routes, svg::Document& doc, const SphereProjector& sphere_projector) const;

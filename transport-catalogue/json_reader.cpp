@@ -13,8 +13,7 @@ namespace catalogue_core {
 	using namespace json;
 
 	 JSONReader::JSONReader(RequestHandler& request_handler, catalogue_core::renderer::MapRenderer& map_renderer)
-		: request_handler_(&request_handler)
-		, map_renderer_(&map_renderer){
+		: request_handler_(&request_handler){
 	}
 
 	svg::Color ConvertJSONToColor(const json::Node& node){
@@ -75,6 +74,17 @@ namespace catalogue_core {
 
 	void JSONReader::ToProcessTheRequests(const json::Dict& doc, std::ostream& os) {
 
+		if (doc.count("serialization_settings") == 0) {
+			return;
+		}
+		auto settings = doc.at("serialization_settings"s);
+		if (settings.AsDict().count("file"s)) {
+			request_handler_->FillSerializeSettings(settings.AsDict().at("file").AsString());
+			request_handler_->DerializeFull();
+		}
+		else
+			return;
+
 		if (doc.count("stat_requests"s) == 0) {
 			return;
 		}
@@ -134,7 +144,7 @@ namespace catalogue_core {
 			}
 			else if (stat_request.AsDict().at("type"s) == "Map"s) {
 				std::ostringstream output;
-				map_renderer_->RenderMap(request_handler_->GetAllRoutes(), output);
+				request_handler_->RenderMap(output);
 				PrintSvg(q.id, output, os);
 			}
 		}
@@ -181,7 +191,7 @@ namespace catalogue_core {
 			}
 		}
 
-		map_renderer_->LoadRendererSettings(std::move(settings));		
+		request_handler_->LoadRendererSettings(std::move(settings));		
 	}
 
 	void JSONReader::CreateRouter(const json::Dict& doc) {
@@ -193,7 +203,11 @@ namespace catalogue_core {
 		request_handler_->CreateRouter(settings);
 	}
 
-	void JSONReader::QueryProcessing(std::istream& is, [[maybe_unused]]std::ostream& os) {
+	void JSONReader::ProcessRequests(std::istream& is, [[maybe_unused]]std::ostream& os) {
+		ToProcessTheRequests(const_cast<json::Node&>(json::Load(is).GetRoot()).AsDict(), os);
+	}
+
+	void JSONReader::MakeBaseProcessing(std::istream& is, [[maybe_unused]] std::ostream& os) {
 
 		std::map<std::string, json::Node> doc = const_cast<json::Node&>(json::Load(is).GetRoot()).AsDict();
 
@@ -203,8 +217,13 @@ namespace catalogue_core {
 		if (doc.count("routing_settings"s)) {
 			CreateRouter(doc.at("routing_settings"s).AsDict());
 		}
-
-		ToProcessTheRequests(doc, os);
+		if (doc.count("serialization_settings"s)) {
+			auto settings = doc.at("serialization_settings"s).AsDict();
+			if (settings.count("file"s)) {
+				request_handler_->FillSerializeSettings(settings.at("file").AsString());
+			}
+		}
+		request_handler_->SerializeFull();
 	}
 
 	void JSONReader::PrintInformationAboutBus(const domain::RouteStatistic& output, int id, std::ostream& os) const {
